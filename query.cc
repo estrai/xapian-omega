@@ -856,6 +856,7 @@ CMD_relevants,
 CMD_score,
 CMD_set,
 CMD_setmap,
+CMD_setnumrangefield,
 CMD_setrelevant,
 CMD_slice,
 CMD_split,
@@ -976,6 +977,7 @@ T(score,	   0, 0, N, 0), // score (0-10) of current hit
 T(set,		   2, 2, N, 0), // set option value
 T(setmap,	   1, N, N, 0), // set map of option values
 T(setrelevant,     0, 1, N, Q), // set rset
+T(setnumrangefield, 1, 1, N, 0),
 T(slice,	   2, 2, N, 0), // slice a list using a second list
 T(split,	   1, 2, N, 0), // split a string to give a list
 T(stoplist,	   0, 0, N, Q), // return list of stopped terms
@@ -1134,6 +1136,7 @@ eval(const string &fmt, const vector<string> &param)
 	    for (vector<string>::size_type j = 0; j < n; j++)
 		args[j] = eval(args[j], param);
 	}
+
 	if (func->second->ensure == 'Q' || func->second->ensure == 'M')
 	    ensure_query_parsed();
 	if (func->second->ensure == 'M') ensure_match();
@@ -1141,6 +1144,14 @@ eval(const string &fmt, const vector<string> &param)
 	switch (func->second->tag) {
 	    case CMD_:
 	        break;
+        case CMD_setnumrangefield: {
+        Xapian::NumberValueRangeProcessor numrange_proc(string_to_int(args[0]));
+        qp.add_valuerangeprocessor(&numrange_proc);
+		ensure_query_parsed(); /* this is doing what we need, but it's more a hack than a solution
+		                          ensure_query_parsed() won't be called before this step because "ensure" value is 0
+								  (the 5th arg in the T macro above) */
+        break;
+        }
 	    case CMD_add: {
 		int total = 0;
 		vector<string>::const_iterator i;
